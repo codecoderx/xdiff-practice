@@ -1,0 +1,13 @@
+rust:
+  req1:
+    url: https://www.rust-lang.org/
+    headers:
+        user-agent: Aloha
+    params:
+      hello: world
+  req2:
+    method: GET
+    url: https://www.rust-lang.org/
+    params: {}
+  res:
+    skip: []
