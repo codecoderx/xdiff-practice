@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 use reqwest::{Method, header::HeaderMap};
 use url::Url;
 use tokio::fs;
+use crate::ExtraArgs;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DiffConfig {
@@ -60,10 +61,7 @@ impl DiffConfig {
 }
 
 impl DiffProfile {
-    
-}
-
-#[derive(Debug)]
-pub struct DiffArgs {
-    
+    pub async fn diff(&self, _args: ExtraArgs) -> Result<String> {
+        Ok("".to_string())
+    }
 }
