@@ -2,6 +2,7 @@ use xdiff::cli::{Action, DiffArgs, RunArgs};
 use clap::Parser;
 use anyhow::Result;
 use xdiff::config::DiffConfig;
+use std::io::Write;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,7 +22,13 @@ async fn run(args: RunArgs) -> Result<()> {
 
     let profile = diff_config.get_profile(&args.profile).ok_or_else(|| anyhow::anyhow!("Profile {} not found in config file {}", args.profile, config))?;
     let extra_params =  args.extra_params.into();
+
+    let output = profile.diff(extra_params).await?;
     
-    profile.diff(extra_params).await?;
+    let stdout = std::io::stdout();
+    let mut stdout = stdout.lock();
+
+    write!(stdout, "{}", output)?;
+
     Ok(())
 }

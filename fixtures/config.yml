@@ -10,4 +10,7 @@ rust:
     url: https://www.rust-lang.org/
     params: {}
   res:
-    skip: []
+    skip_headers: 
+      - via
+      - x-amz-cf-id
+      - date

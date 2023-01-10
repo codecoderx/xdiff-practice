@@ -1,5 +1,7 @@
 pub mod config;
 pub mod cli;
+pub mod req;
+pub mod utils;
 
 use cli::{KeyVal, KeyValType};
 
