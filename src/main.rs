@@ -1,8 +1,12 @@
+use xdiff::ExtraArgs;
 use xdiff::cli::{Action, DiffArgs, RunArgs};
 use clap::Parser;
 use anyhow::Result;
-use xdiff::config::DiffConfig;
+use xdiff::config::{DiffConfig, DiffProfile, ResponseProfile};
+use xdiff::req::RequestProfile;
 use std::io::Write;
+use dialoguer::{Input, MultiSelect};
+use dialoguer::theme::ColorfulTheme;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -10,6 +14,7 @@ async fn main() -> Result<()> {
 
     match args.action {
         Action::Run(run_args) => run(run_args).await?,
+        Action::Parse => parse().await?,
         _ => panic!("Not Implemented") 
     }
 
@@ -29,6 +34,45 @@ async fn run(args: RunArgs) -> Result<()> {
     let mut stdout = stdout.lock();
 
     write!(stdout, "{}", output)?;
+
+    Ok(())
+}
+
+async fn parse()-> Result<()> {
+    let theme = ColorfulTheme::default();
+    let url1 : String = Input::with_theme(&theme)
+        .with_prompt("Url1")
+        .interact_text()?;
+    let req1: RequestProfile = url1.parse()?;
+    req1.validate()?;
+
+    let url2 : String = Input::with_theme(&theme)
+        .with_prompt("Url2")
+        .interact_text()?;
+    let req2: RequestProfile = url2.parse()?;
+    req1.validate()?;
+
+    let res = req1.send(&ExtraArgs::default()).await?;
+    
+    let headers = res.get_header_keys()?;
+    let chosen : Vec<usize> = MultiSelect::new()
+        .with_prompt("Select skip headers")
+        .items(&headers)
+        .interact()?;
+
+    let skip_headers: Vec<String> = chosen.iter().map(|i| headers[*i].to_string()).collect();
+    let response_profile = ResponseProfile::new(skip_headers, Vec::new());
+    let diff_profile = DiffProfile::new(req1, req2, response_profile);
+
+    let profile : String = Input::with_theme(&theme)
+        .with_prompt("Profile")
+        .interact_text()?;
+
+    let config = DiffConfig::new([(profile, diff_profile)].into());
+    
+    let stdout  = std::io::stdout();
+    let mut output = stdout.lock();
+    write!(output, "{}", serde_yaml::to_string(&config)?)?;
 
     Ok(())
 }

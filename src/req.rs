@@ -18,16 +18,30 @@ pub struct RequestProfile {
     #[serde(skip_serializing_if="HeaderMap::is_empty", with= "http_serde::header_map", default)]
     pub headers: HeaderMap,
 
-    #[serde(skip_serializing_if="Option::is_none", default)]
+    #[serde(skip_serializing_if="not_json_object", default)]
     pub params: Option<Value>,
 
-    #[serde(skip_serializing_if="Option::is_none", default)]
+    #[serde(skip_serializing_if="not_json_object", default)]
     pub body: Option<Value>
+}
+
+pub fn not_json_object(v: &Option<Value>) -> bool {
+    v.as_ref().map_or(true, |x| x.is_null() || (x.is_object() && x.as_object().unwrap().is_empty()) || !x.is_object())
 }
 
 pub struct ResponseExt(Response);
 
 impl RequestProfile {
+    pub fn new(method: Method, url: Url, headers: HeaderMap, params: Option<Value>, body: Option<Value>) -> Self {
+        Self {
+            method, 
+            url, 
+            headers,
+            params, 
+            body
+        }
+    }
+
     pub async fn send(&self, args: &ExtraArgs)-> Result<ResponseExt> {
         let client = Client::new();
         let (headers, query, body) = self.generate(args)?;
@@ -59,7 +73,7 @@ impl RequestProfile {
         }
 
         for (k, v) in &args.body {
-            body[k] = v.parse()?
+            body[k] = v.parse()?;
         }
 
         let content_type = get_content_type(&headers)?;
@@ -86,6 +100,27 @@ impl RequestProfile {
         }
 
         Ok(())
+    }
+}
+
+impl FromStr for RequestProfile {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let url = Url::parse(s)?;
+        let query = url.query_pairs();
+        let mut params = json!({});
+        for (k, v) in query {
+            params[&*k] = v.parse()?;
+        }
+
+        Ok(RequestProfile::new(
+            Method::GET,
+            url,
+            HeaderMap::default(),
+            Some(params),
+            None
+        ))
     }
 }
 
@@ -121,6 +156,10 @@ impl ResponseExt {
         };
 
         Ok(output.to_string())
+    }
+
+    pub fn get_header_keys(&self) -> Result<Vec<String>> {
+        Ok(self.0.headers().iter().map(|(key,_)| key.to_string()).collect())
     }
 }
 

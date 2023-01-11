@@ -5,7 +5,7 @@ pub mod utils;
 
 use cli::{KeyVal, KeyValType};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ExtraArgs {
     pub headers: Vec<(String,String)>,
     pub body: Vec<(String,String)>,

@@ -11,7 +11,8 @@ pub struct DiffArgs {
 #[derive(Subcommand, Debug)]
 #[non_exhaustive]
 pub enum Action {
-    Run(RunArgs)
+    Run(RunArgs),
+    Parse
 }
 
 #[derive(Args, Debug)]
