@@ -71,6 +71,22 @@ impl RequestProfile {
 
         Ok((headers, query, body))
     }
+
+    pub fn validate(&self)-> Result<()> {
+        if let Some(body) = self.body.as_ref() {
+            if !body.is_object() {
+                return Err(anyhow::anyhow!("Parse body is not a object. \n{}\n", serde_yaml::to_string(body)?))
+            }   
+        }
+
+        if let Some(params) = self.params.as_ref() {
+            if !params.is_object() {
+                return Err(anyhow::anyhow!("Parse params is not a object. \n{}\n", serde_yaml::to_string(params)?))
+            }   
+        }
+
+        Ok(())
+    }
 }
 
 impl ResponseExt {
@@ -109,5 +125,5 @@ impl ResponseExt {
 }
 
 fn get_content_type(headers: &HeaderMap) -> Result<Option<String>> {
-    Ok(headers.get(CONTENT_TYPE).map(|v| v.to_str().unwrap().split(";").next()).flatten().map(|v|v.to_string()))
+    Ok(headers.get(CONTENT_TYPE).and_then(|v| v.to_str().unwrap().split(";").next().map(|k| k.to_string())))
 }
