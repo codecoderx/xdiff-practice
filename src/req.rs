@@ -1,13 +1,13 @@
 use serde::{Serialize, Deserialize};
 use std::{fmt::Debug, str::FromStr};
 use reqwest::{Method, Response, Client};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE};
 use url::Url;
 use std::fmt::Write;
 
-use crate::{ExtraArgs, config::ResponseProfile};
+use crate::{ExtraArgs, Validate, config::ResponseProfile};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestProfile {
@@ -85,8 +85,10 @@ impl RequestProfile {
 
         Ok((headers, query, body))
     }
+}
 
-    pub fn validate(&self)-> Result<()> {
+impl Validate for RequestProfile {
+    fn validate(&self)-> Result<()> {
         if let Some(body) = self.body.as_ref() {
             if !body.is_object() {
                 return Err(anyhow::anyhow!("Parse body is not a object. \n{}\n", serde_yaml::to_string(body)?))
@@ -111,7 +113,7 @@ impl FromStr for RequestProfile {
         let query = url.query_pairs();
         let mut params = json!({});
         for (k, v) in query {
-            params[&*k] = v.parse()?;
+            params[&*k] = v.parse().context(format!("Parse {}:{} fail.", &*k, v))?;
         }
 
         Ok(RequestProfile::new(
@@ -123,6 +125,8 @@ impl FromStr for RequestProfile {
         ))
     }
 }
+
+
 
 impl ResponseExt {
     pub async fn filter_text(self, profile: &ResponseProfile)-> Result<String> {

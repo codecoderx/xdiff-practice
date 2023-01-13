@@ -7,6 +7,8 @@ use xdiff::req::RequestProfile;
 use std::io::Write;
 use dialoguer::{Input, MultiSelect};
 use dialoguer::theme::ColorfulTheme;
+use xdiff::utils::highlight_text;
+use xdiff::{LoadConfig, Validate};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -69,10 +71,17 @@ async fn parse()-> Result<()> {
         .interact_text()?;
 
     let config = DiffConfig::new([(profile, diff_profile)].into());
-    
+    let text = &serde_yaml::to_string(&config)?;
+
     let stdout  = std::io::stdout();
     let mut output = stdout.lock();
-    write!(output, "{}", serde_yaml::to_string(&config)?)?;
+
+    // 兼容管道或重定向
+    if atty::is(atty::Stream::Stdout) { 
+        write!(output, "{}", highlight_text(&text, "yaml")?)?;
+    } else {
+        write!(output, "{}", text)?;
+    }
 
     Ok(())
 }

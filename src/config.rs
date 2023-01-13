@@ -1,8 +1,7 @@
 use anyhow::{Context, Result};
 use std::{collections::HashMap};
 use serde::{Serialize, Deserialize};
-use tokio::fs;
-use crate::{ExtraArgs, utils};
+use crate::{ExtraArgs, LoadConfig, Validate, utils};
 use crate::req::RequestProfile;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -49,21 +48,12 @@ impl DiffConfig {
         }
     }
 
-    pub async fn load_yaml(path: &str) ->  Result<Self> {
-        let data = fs::read_to_string(path).await?;
-        Self::from_yaml(&data)
-    }
-
-    pub fn from_yaml(data: &str) -> Result<Self> {
-        let config: Self = serde_yaml::from_str(data)?;
-        config.validate()?;
-        Ok(config)
-    }
-
     pub fn get_profile(&self, name:&str) -> Option<&DiffProfile> {
         self.profiles.get(name)
     }
+}
 
+impl Validate for DiffConfig {
     fn validate(&self) -> Result<()> {
         for (name, profile) in &self.profiles {
             profile.validate().context(format!("Parse profile {} occur a error.", name))?;
@@ -71,6 +61,8 @@ impl DiffConfig {
         Ok(())
     }
 }
+
+impl LoadConfig for DiffConfig {}
 
 impl DiffProfile {
     pub fn new(req1: RequestProfile, req2: RequestProfile, res: ResponseProfile) -> Self {

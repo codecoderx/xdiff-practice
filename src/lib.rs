@@ -4,6 +4,28 @@ pub mod req;
 pub mod utils;
 
 use cli::{KeyVal, KeyValType};
+use serde::de::DeserializeOwned;
+use tokio::fs;
+use anyhow::Result;
+use async_trait::async_trait;
+
+pub trait Validate {
+    fn validate(&self) -> Result<()>;
+}
+
+#[async_trait]
+pub trait LoadConfig: Sized + DeserializeOwned + Validate {
+    async fn load_yaml(path: &str) ->  Result<Self> {
+        let data = fs::read_to_string(path).await?;
+        Self::from_yaml(&data)
+    }
+
+    fn from_yaml(data: &str) -> Result<Self>  {
+        let config: Self = serde_yaml::from_str(data)?;
+        config.validate()?;
+        Ok(config)
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct ExtraArgs {
