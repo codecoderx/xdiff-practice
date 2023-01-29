@@ -1,4 +1,4 @@
-# XDiff tool
+# xdiff tool
 
 ## Usage
 ```trycmd
