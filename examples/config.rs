@@ -1,4 +1,5 @@
 use xdiff::config::DiffConfig;
+use xdiff::LoadConfig;
 use anyhow::Result;
 
 fn main() -> Result<()> {

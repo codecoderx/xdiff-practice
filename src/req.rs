@@ -55,7 +55,7 @@ impl RequestProfile {
         Ok(ResponseExt(response))
     }
 
-    pub fn generate(&self, args: &ExtraArgs) -> Result<(HeaderMap, Value, String)> {
+    fn generate(&self, args: &ExtraArgs) -> Result<(HeaderMap, Value, String)> {
         let mut headers = self.headers.clone();
         let mut query  = self.params.clone().unwrap_or_else(|| json!({}));
         let mut body  = self.body.clone().unwrap_or_else(|| json!({}));
@@ -169,4 +169,31 @@ impl ResponseExt {
 
 fn get_content_type(headers: &HeaderMap) -> Result<Option<String>> {
     Ok(headers.get(CONTENT_TYPE).and_then(|v| v.to_str().unwrap().split(";").next().map(|k| k.to_string())))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
+    use serde_json::Value;
+    use mockito::{self, mock};
+    use crate::ExtraArgs;
+    use super::{RequestProfile, ResponseExt};
+    use reqwest:: {Method, header::HeaderMap, StatusCode};
+    use serde_json::json;
+    
+    #[tokio::test]
+    async fn send_should_work()-> Result<()>{
+        let m1 = mock("GET", "/hello?name=judy").with_status(200).create();
+        let resp = get_response("/hello", HeaderMap::default(), Some(json!({"name":"judy"})), None, ExtraArgs::default()).await?;
+        assert_eq!(resp.0.status(), StatusCode::OK);
+        m1.assert();
+        Ok(())
+    }
+
+    async fn get_response(path:&str, headers: HeaderMap, params: Option<Value>, body: Option<Value>, args: ExtraArgs)-> Result<ResponseExt> {
+        let url = format!("{}{}", mockito::server_url(), path);
+        let req = RequestProfile::new(Method::GET, reqwest::Url::parse(&url)?, headers, params, body);
+        Ok(req.send(&args).await?)
+    }
 }
