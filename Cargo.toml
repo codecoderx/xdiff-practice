@@ -22,5 +22,6 @@ serde_yaml = "0.9.16"
 similar = { version = "2.2.1", features = ["inline"] }
 syntect = "5.0.0"
 tokio = { version = "1.24.1", features = ["full"] }
+trycmd = "0.14.10"
 url = { version = "2.3.1", features = ["serde"] }
 

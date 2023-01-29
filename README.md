@@ -1,0 +1,16 @@
+# XDiff tool
+
+## Usage
+```trycmd
+$ xdiff --help
+Usage: xdiff <COMMAND>
+
+Commands:
+  run    
+  parse  
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help information
+  -V, --version  Print version information[..]
+```
